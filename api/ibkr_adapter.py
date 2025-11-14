@@ -14,6 +14,7 @@ class IBKRBroker:
         """
         IB Gateway yoksa veya port kapalıysa burada takılmasın diye
         kısa timeout ile deniyoruz ve hata mesajını saklıyoruz.
+        DİKKAT: Burada status() ÇAĞRILMIYOR, sadece flag'leri güncelliyoruz.
         """
         try:
             if self.ib is None:
@@ -25,14 +26,16 @@ class IBKRBroker:
         except Exception as e:
             self.connected = False
             self.last_error = str(e)
-        return self.status()
 
     def status(self):
         """
         /api/ibkr/status burayı kullanacak.
+        Gerekirse sadece BAĞLANMAMIŞSA bir kez connect() dener.
+        Ama connect() status() çağırmadığı için RECURSION YOK.
         """
-        if not self.connected:
+        if not self.connected and self.ib is None:
             self.connect()
+
         return {
             "connected": self.connected,
             "last_error": self.last_error,
@@ -46,6 +49,7 @@ class IBKRBroker:
             self.connect()
         if not self.connected:
             return {"connected": False, "error": self.last_error}
+
         try:
             vals = self.ib.accountSummary()
             out = {}
@@ -62,6 +66,7 @@ class IBKRBroker:
             self.connect()
         if not self.connected:
             return {"connected": False, "positions": [], "error": self.last_error}
+
         try:
             positions = self.ib.positions()
             result = []
@@ -88,9 +93,11 @@ class IBKRBroker:
                 "qty": qty,
                 "side": side,
             }
+
         side_up = side.upper()
         if side_up not in ("BUY", "SELL"):
             return {"ok": False, "error": f"invalid side: {side}"}
+
         try:
             contract = Stock(symbol, "SMART", "USD")
             order = self.ib.marketOrder(side_up, qty)
