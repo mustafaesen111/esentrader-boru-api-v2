@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}ESENTRADER — Operasyon Paneli{% endblock %}
+
+{% block content %}
+    <h1>Operasyon Paneli</h1>
+    <p class="small">
+        Bu sayfa doğrudan VPS’te çalışan Tek Boru API’den veri çekiyor
+        (<code>5.161.110.7:5055</code>).
+    </p>
+
+    <div class="grid">
+        <div class="card">
+            <div class="tag">Durum</div>
+            <h2>API Health</h2>
+            {% if api_status == "ok" %}
+                <p><span class="ok">OK</span> — service:
+                    <code>{{ api_raw.service }}</code></p>
+            {% elif api_status == "error" %}
+                <p><span class="bad">HATA</span></p>
+                <p class="small">{{ api_raw.error }}</p>
+            {% else %}
+                <p><span class="bad">UNKNOWN</span></p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="tag">IBKR</div>
+            <h2>IBKR Bağlantısı</h2>
+            {% if ibkr_connected %}
+                <p><span class="ok">BAĞLI</span></p>
+            {% else %}
+                <p><span class="bad">BAĞLI DEĞİL</span></p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="tag">Sistem Kalbi</div>
+        <h2>“Tek Boru — Multi Adapter — 8 Refleks — Self Healing Mimari”</h2>
+        <ul>
+            <li><b>1) Tek Boru API:</b> Tüm emirler buradan geçiyor (router + alert + manual order).
+                Yarın IBKR bağlantısı zaten geldi, sonra Binance, Alpaca vs. eklenecek.</li>
+            <li><b>2) Multi-Broker Adapter:</b> Her broker ayrı modül. Bir adapter düşse bile sistem ayakta.</li>
+            <li><b>3) Copy Engine:</b> Portföy oranlı dağıtım. Uzun vadede 3.000+ aboneyi kaldıracak kapasite.</li>
+            <li><b>4) Queue + Retry:</b> İşlemler kuyruklanır, internet gitse bile yeniden denenir.</li>
+            <li><b>5) Idempotency:</b> Aynı sinyalden çift emir çıkmaz, tekrarlayan sinyaller filtrelenir.</li>
+            <li><b>6) Circuit Breaker:</b> IBKR çok hata verirse geçici duraklatma (koruma freni) devreye girer.</li>
+            <li><b>7) Healthcheck + Ping:</b> API ve broker bağlantıları düzenli olarak taranır ve loglanır.</li>
+            <li><b>8) Supervisor / systemd:</b> Servisler çökerse otomatik yeniden ayağa kalkar.</li>
+        </ul>
+        <p class="small">
+            Hedef: 2025 → 2030 arası “sorunsuz, tık demeyen, kendi kendini tamir eden finans bot operasyonu”.
+        </p>
+    </div>
+
+    <p class="small">
+        Sayfayı manuel yenilediğinde (F5) değerler IBKR API’den tekrar çekilir.
+        İleride burada: hesap özeti, açık pozisyonlar, copy-engine istatistikleri de göreceğiz.
+    </p>
+{% endblock %}
