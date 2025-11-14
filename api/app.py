@@ -141,7 +141,37 @@ def signal_alias():
     return alert()
 
 
+# ===================== IBKR READ-ONLY ENDPOINTLERI (FAZ A) =====================
+
+@app.route("/api/ibkr/status", methods=["GET"])
+def ibkr_status():
+    """
+    IBKR bağlantı durumu
+    """
+    connected = ibkr_broker.connect()
+    return jsonify({"ibkr_connected": bool(connected)})
+
+
+@app.route("/api/ibkr/account", methods=["GET"])
+def ibkr_account():
+    """
+    IBKR hesap özeti
+    ibkr_adapter.py içindeki account_info()'yu kullanır.
+    """
+    data = ibkr_broker.account_info()
+    return jsonify(data)
+
+
+@app.route("/api/ibkr/positions", methods=["GET"])
+def ibkr_positions():
+    """
+    IBKR açık pozisyonlar listesi
+    ibkr_adapter.py içindeki positions()'u kullanır.
+    """
+    data = ibkr_broker.positions()
+    return jsonify({"positions": data})
+
+
 if __name__ == "__main__":
-    # Port: 80
-    # Dışarıdan: http://5.161.110.7:80/alert veya /signal
+    # Port: 5055  (80 numaralı porttan buraya yönlendiriliyor)
     app.run(host="0.0.0.0", port=5055, debug=True)
