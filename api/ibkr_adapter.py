@@ -1,102 +1,88 @@
+"""
+IBKR boru adaptörü (iskelet sürüm)
+
+Şu an sadece 7497 portu açık mı kontrol ediyor.
+IB Gateway + IBC tam oturduğunda, buraya ib_insync tabanlı
+gerçek hesap / pozisyon fonksiyonlarını ekleyeceğiz.
+
+Ama app.py ve web tarafı bundan etkilenmeyecek;
+sadece bu dosyanın içi genişleyecek.
+"""
+
 from __future__ import annotations
-from typing import Dict, Any, Optional, List
+
+import socket
+from dataclasses import dataclass
+from typing import Dict
 
 
-class IBKRBroker:
-    """
-    FAZ A DEMO ADAPTER
-    ------------------
-    - Gerçek IBKR / ib_insync bağlantısı YOK.
-    - connect() çağrıldığında sadece kendini "bağlı" sayar.
-    - account_info / positions / place_order sahte (dummy) veri döner.
-    - Ama API ÇÖKMEZ, her zaman /api/health ve /api/ibkr/status cevap verir.
-    """
+@dataclass
+class IbkrConfig:
+    host: str = "127.0.0.1"
+    port: int = 7497
+    client_id: int = 1
+    timeout: float = 1.0  # saniye
 
-    def __init__(self, host: str = "127.0.0.1", port: int = 4001, client_id: int = 1):
-        self.host = host
-        self.port = port
-        self.client_id = client_id
-        self.connected: bool = False
-        self.last_error: Optional[str] = None
 
-    # ---- Bağlantı (DEMO) ----
-    def connect(self) -> Dict[str, Any]:
+class IbkrAdapter:
+    def __init__(self, cfg: IbkrConfig | None = None) -> None:
+        self.cfg = cfg or IbkrConfig()
+
+    # ---------- İç yardımcılar ----------
+
+    def _check_port_open(self) -> bool:
         """
-        Gerçek bağlantı yok. Sadece "bağlı" bayrağını True yapar.
+        Sadece TCP seviyesinde 7497 portu açık mı diye bakar.
+        IB Gateway gerçekten login olduysa bu port dinlemededir.
         """
-        self.connected = True
-        self.last_error = None
-        return self.status()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(self.cfg.timeout)
+        try:
+            sock.connect((self.cfg.host, self.cfg.port))
+            sock.close()
+            return True
+        except OSError:
+            return False
 
-    # ---- Durum ----
-    def status(self) -> Dict[str, Any]:
-        return {
-            "ibkr_connected": self.connected,
-            "host": self.host,
-            "port": self.port,
-            "client_id": self.client_id,
-            "last_error": self.last_error,
-        }
+    # ---------- Dış API ----------
 
-    # ---- Hesap Özeti (DEMO) ----
-    def account_info(self) -> Dict[str, Any]:
-        if not self.connected:
-            return {
-                "cash": 0.0,
-                "equity": 0.0,
-                "currency": "USD",
-                "notes": "IBKR not connected (DEMO)",
-                "last_error": self.last_error or "Not connected",
-            }
-
-        # Burayı istersen sonra gerçek IBKR verisiyle dolduracağız.
-        return {
-            "cash": 3200.0,
-            "equity": 5380.0,
-            "currency": "USD",
-            "notes": "DEMO account_info (FAZ A stub)",
-            "last_error": None,
-        }
-
-    # ---- Pozisyonlar (DEMO) ----
-    def positions(self) -> List[Dict[str, Any]]:
-        if not self.connected:
-            return []
-
-        # Örnek dummy pozisyonlar
-        return [
-            {
-                "symbol": "GLDM",
-                "qty": 10,
-                "avg_price": 210.5,
-                "market_price": 212.0,
-                "unrealized_pnl": 15.0,
-            },
-            {
-                "symbol": "SMH",
-                "qty": 5,
-                "avg_price": 240.0,
-                "market_price": 238.5,
-                "unrealized_pnl": -7.5,
-            },
-        ]
-
-    # ---- Emir Gönderme (DEMO) ----
-    def place_order(self, symbol: str, qty: float, side: str) -> Dict[str, Any]:
+    def get_status(self) -> Dict:
         """
-        Gerçek emir YOK. Sadece log/response döner.
+        API'nin dünyaya döndüğü tek IBKR status fonksiyonu.
+        Şu an sadece port durumuna göre 'connected' alanını dolduruyor.
+        İleride buraya gerçek IBKR API bağlantı kontrolü,
+        account id, son ping zamanı vs. ekleyebiliriz.
         """
-        if not self.connected:
-            return {
-                "ok": False,
-                "error": "IBKR not connected (DEMO)",
-                "details": self.status(),
-            }
+        port_open = self._check_port_open()
+
+        if port_open:
+            note = (
+                "IB Gateway 7497 portu açık görünüyor. "
+                "2FA temizlenip IBC otomatik login oturduktan sonra "
+                "hesap/pozisyon fonksiyonları aktifleştirilebilir."
+            )
+        else:
+            note = (
+                "IB Gateway henüz bağlanmadı veya 7497 portu kapalı. "
+                "Google Authenticator kaldırılıp IBC login tamamlanınca "
+                "buradaki 'connected' alanı true olacak."
+            )
 
         return {
-            "ok": True,
-            "symbol": symbol,
-            "qty": qty,
-            "side": side,
-            "note": "DEMO order – Faz A stub (gerçek IBKR yok).",
+            "service": "ibkr",
+            "host": self.cfg.host,
+            "port": self.cfg.port,
+            "client_id": self.cfg.client_id,
+            "connected": port_open,
+            "note": note,
         }
+
+    # Buraya ileride:
+    # - get_account()
+    # - get_positions()
+    # - place_order()
+    # gibi fonksiyonlar eklenecek. app.py ve web bunlardan bağımsız kalacak.
+
+
+# Uygulama genelinde kullanılacak tek instance
+ibkr = IbkrAdapter()
