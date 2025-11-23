@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <title>EsenTrader - Admin Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #050816;
+            color: #e5e7eb;
+        }
+        .page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            padding: 16px 24px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo {
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #a5b4fc;
+        }
+        .env-pill {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            color: #9ca3af;
+        }
+        main {
+            flex: 1;
+            padding: 24px;
+            max-width: 980px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 22px;
+            margin: 0 0 8px;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #9ca3af;
+            margin-bottom: 24px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+        }
+        .card {
+            background: radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 55%),
+                        radial-gradient(circle at bottom right, rgba(168,85,247,0.18), transparent 55%),
+                        #020617;
+            border-radius: 18px;
+            padding: 16px 18px;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.75);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            padding: 3px 9px;
+            border-radius: 999px;
+            border: 1px solid;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+        }
+        .status-ok {
+            border-color: rgba(34,197,94,0.5);
+            color: #bbf7d0;
+            background: rgba(22,163,74,0.16);
+        }
+        .status-warn {
+            border-color: rgba(234,179,8,0.5);
+            color: #facc15;
+            background: rgba(202,138,4,0.16);
+        }
+        .status-down {
+            border-color: rgba(248,113,113,0.6);
+            color: #fecaca;
+            background: rgba(220,38,38,0.18);
+        }
+        .dot-ok { background: #22c55e; }
+        .dot-warn { background: #eab308; }
+        .dot-down { background: #ef4444; }
+
+        .card-body {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+        .card-body p {
+            margin: 3px 0;
+        }
+        .label {
+            color: #6b7280;
+        }
+        .json-view {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(15,23,42,0.95);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 12px;
+            color: #e5e7eb;
+            max-height: 230px;
+            overflow: auto;
+            border: 1px solid rgba(55,65,81,0.9);
+        }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+        .toolbar-left {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        button {
+            border-radius: 999px;
+            border: 1px solid transparent;
+            padding: 6px 14px;
+            font-size: 13px;
+            cursor: pointer;
+            background: linear-gradient(to right, #4f46e5, #7c3aed);
+            color: white;
+        }
+        button.secondary {
+            background: rgba(15,23,42,1);
+            border-color: rgba(148,163,184,0.5);
+            color: #e5e7eb;
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: default;
+        }
+        footer {
+            padding: 12px 24px 16px;
+            font-size: 11px;
+            color: #6b7280;
+            border-top: 1px solid rgba(31,41,55,0.9);
+            text-align: right;
+        }
+        .small {
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <header>
+        <div class="logo">ESENTRADER • BORU ADMIN</div>
+        <div class="env-pill">VPS • PROD • 5.78.152.122</div>
+    </header>
+
+    <main>
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <h1>Servis Durumu</h1>
+                <div class="subtitle">
+                    Boru API &amp; admin katmanının canlı durumunu buradan izleyebilirsin.
+                </div>
+            </div>
+            <div class="toolbar-actions">
+                <button id="refreshBtn">Yenile</button>
+                <button id="autoBtn" class="secondary">Oto-Yenile: Kapalı</button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Boru API kartı -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Boru API (5055)</div>
+                    <div id="boruStatusPill" class="status-pill status-down">
+                        <span class="dot dot-down"></span>
+                        <span>Bekleniyor...</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p><span class="label">Servis:</span> <span id="boruService">-</span></p>
+                    <p><span class="label">Durum:</span> <span id="boruStatusText">-</span></p>
+                    <p><span class="label">Son Kontrol:</span> <span id="boruLastCheck">-</span></p>
+                    <div class="json-view" id="boruJson">Yükleniyor...</div>
+                </div>
+            </div>
+
+            <!-- Admin API kartı -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Admin API (5056)</div>
+                    <div id="adminStatusPill" class="status-pill status-down">
+                        <span class="dot dot-down"></span>
+                        <span>Bekleniyor...</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p><span class="label">Durum:</span> <span id="adminStatusText">-</span></p>
+                    <p><span class="label">IBKR Modu:</span> <span id="ibMode">(şimdilik pasif)</span></p>
+                    <p class="small">Not: IB Gateway henüz VPS üzerinde tam bağlanmadığı için burada sadece
+                        admin &amp; boru sağlık durumu gösteriliyor.</p>
+                    <div class="json-view" id="adminJson">Yükleniyor...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        EsenTrader Boru Çekirdeği • Admin Panel • <span id="footerTime">-</span>
+    </footer>
+</div>
+
+<script>
+    const REFRESH_MS = 15000; // oto yenile: 15 saniye
+    let auto = false;
+    let autoTimer = null;
+
+    const refreshBtn = document.getElementById("refreshBtn");
+    const autoBtn = document.getElementById("autoBtn");
+
+    function setPill(el, status) {
+        el.classList.remove("status-ok", "status-warn", "status-down");
+        const span = el.querySelector("span:nth-child(2)");
+        const dot = el.querySelector(".dot");
+        dot.classList.remove("dot-ok", "dot-warn", "dot-down");
+
+        if (status === "ok") {
+            el.classList.add("status-ok");
+            dot.classList.add("dot-ok");
+            span.textContent = "ÇALIŞIYOR";
+        } else if (status === "warn") {
+            el.classList.add("status-warn");
+            dot.classList.add("dot-warn");
+            span.textContent = "UYARI";
+        } else {
+            el.classList.add("status-down");
+            dot.classList.add("dot-down");
+            span.textContent = "KAPALI";
+        }
+    }
+
+    async function fetchStatus() {
+        refreshBtn.disabled = true;
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString("tr-TR", {hour12: false});
+
+        const boruService = document.getElementById("boruService");
+        const boruStatusText = document.getElementById("boruStatusText");
+        const boruLastCheck = document.getElementById("boruLastCheck");
+        const boruJson = document.getElementById("boruJson");
+        const boruStatusPill = document.getElementById("boruStatusPill");
+
+        const adminStatusText = document.getElementById("adminStatusText");
+        const adminJson = document.getElementById("adminJson");
+        const adminStatusPill = document.getElementById("adminStatusPill");
+
+        const footerTime = document.getElementById("footerTime");
+
+        try {
+            const res = await fetch("/api/admin/health");
+            const data = await res.json();
+
+            // admin API
+            adminStatusText.textContent = data.ok ? "OK" : "HATA";
+            adminJson.textContent = JSON.stringify(data, null, 2);
+            setPill(adminStatusPill, data.ok ? "ok" : "down");
+
+            // boru
+            if (data.boru) {
+                boruService.textContent = data.boru.service || "-";
+                boruStatusText.textContent = data.boru.status || "-";
+                setPill(boruStatusPill, data.boru.status === "ok" ? "ok" : "warn");
+                boruJson.textContent = JSON.stringify(data.boru, null, 2);
+            } else {
+                boruService.textContent = "-";
+                boruStatusText.textContent = "Veri yok";
+                setPill(boruStatusPill, "down");
+                boruJson.textContent = "Boru verisi yok.";
+            }
+
+            boruLastCheck.textContent = timeStr;
+            footerTime.textContent = timeStr;
+        } catch (err) {
+            adminStatusText.textContent = "İstek hatası";
+            adminJson.textContent = String(err);
+            setPill(adminStatusPill, "down");
+
+            boruService.textContent = "-";
+            boruStatusText.textContent = "HATA";
+            boruLastCheck.textContent = timeStr;
+            setPill(boruStatusPill, "down");
+            boruJson.textContent = "Admin API'den yanıt alınamadı.";
+            footerTime.textContent = timeStr;
+        } finally {
+            refreshBtn.disabled = false;
+        }
+    }
+
+    refreshBtn.addEventListener("click", () => {
+        fetchStatus();
+    });
+
+    autoBtn.addEventListener("click", () => {
+        auto = !auto;
+        if (auto) {
+            autoBtn.textContent = "Oto-Yenile: Açık";
+            autoBtn.classList.remove("secondary");
+            autoTimer = setInterval(fetchStatus, REFRESH_MS);
+        } else {
+            autoBtn.textContent = "Oto-Yenile: Kapalı";
+            autoBtn.classList.add("secondary");
+            if (autoTimer) {
+                clearInterval(autoTimer);
+                autoTimer = null;
+            }
+        }
+    });
+
+    // Sayfa açıldığında ilk çekim
+    fetchStatus();
+</script>
+</body>
+</html>
