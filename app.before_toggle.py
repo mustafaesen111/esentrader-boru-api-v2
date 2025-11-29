@@ -17,16 +17,6 @@ from ibkr_client import IBKRClient
 app = Flask(__name__)
 ibkr_client = IBKRClient()
 
-# --- Sağlık kontrolü endpoint'i ---
-@app.route("/api/status")
-def api_status():
-    return jsonify({
-        "ok": True,
-        "service": "esentrader-boru-api",
-        "version": "v1",
-        "message": "boru API ayakta"
-    })
-
 
 @app.route("/")
 def index():

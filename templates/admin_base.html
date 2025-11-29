@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>EsenTrader Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    :root {
+      --bg: #020617;
+      --bg-soft: #020617;
+      --bg-card: #0b1120;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.12);
+      --danger: #f97373;
+      --danger-soft: rgba(248, 113, 113, 0.14);
+      --warning: #fbbf24;
+      --warning-soft: rgba(251, 191, 36, 0.14);
+      --border: #1f2937;
+      --hover: #0f172a;
+      --nav-active: #111827;
+      --nav-hover: #1f2937;
+      --badge-radius: 999px;
+      --card-radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #020617 55%, #000 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* SIDEBAR */
+
+    .sidebar {
+      width: 250px;
+      background: #020617;
+      border-right: 1px solid var(--border);
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      padding: 4px 6px;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #22c55e, #4ade80);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #022c22;
+      font-size: 18px;
+    }
+
+    .brand-text {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .nav-section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin: 18px 4px 6px;
+    }
+
+    .nav-list {
+      list-style: none;
+    }
+
+    .nav-item {
+      margin-bottom: 2px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      color: #e5e7eb;
+      transition: background .15s ease, color .15s ease;
+    }
+
+    .nav-link span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nav-link:hover {
+      background: var(--nav-hover);
+    }
+
+    .nav-link.active {
+      background: var(--nav-active);
+      color: #e5e7eb;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      font-size: 11px;
+      color: var(--muted);
+      padding-top: 10px;
+      border-top: 1px solid #020617;
+    }
+
+    /* MAIN */
+
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      height: 52px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      font-size: 13px;
+    }
+
+    .topbar-title {
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .topbar-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      background: var(--accent-soft);
+      color: #bbf7d0;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    .topbar-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+    }
+
+    .content {
+      padding: 22px 26px 30px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--card-radius);
+      border: 1px solid var(--border);
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .json-card {
+      padding: 12px 16px 16px;
+    }
+
+    .json-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .json-title {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .json-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    pre {
+      font-size: 12px;
+      background: #020617;
+      padding: 12px 14px;
+      border-radius: 10px;
+      overflow-x: auto;
+      border: 1px solid #020617;
+    }
+
+    .page-header {
+      margin-bottom: 16px;
+    }
+
+    .page-header h1 {
+      font-size: 22px;
+      margin-bottom: 4px;
+    }
+
+    .page-header p {
+      font-size: 13px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">E</div>
+      <div>
+        <div class="brand-text">ESENTRADER</div>
+        <div class="brand-sub">Admin &amp; Control Panel</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="nav-section-title">Navigation</div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a href="/admin/home" class="nav-link">
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="/admin/analytics" class="nav-link">
+            <span>Analytics</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="/admin/ibkr" class="nav-link">
+            <span>IBKR Panel</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-section-title">Trading</div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a href="#" class="nav-link">
+            <span>Binance Panel</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#" class="nav-link">
+            <span>Copy-Trade</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-section-title">Subscribers</div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a href="#" class="nav-link">
+            <span>Subscribers</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#" class="nav-link">
+            <span>Settings &amp; Logs</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="sidebar-footer">
+      ESEN V3 · v1
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title">ESENTRADER • ADMIN</div>
+      <div class="topbar-status">
+        <span class="topbar-dot"></span>
+        <span>Boru API ve IBKR kontrol paneli</span>
+      </div>
+    </div>
+
+    <div class="content">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+</div>
+
+</body>
+</html>
