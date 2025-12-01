@@ -1,8 +1,7 @@
 import os
 import json
 import requests
-from flask import Flask, render_template, jsonify
-
+from flask import Flask, render_template, jsonify, redirect, url_for
 # Flask uygulaması
 app = Flask(__name__)
 
@@ -43,6 +42,12 @@ def save_mode(mode: str) -> None:
 def admin_ping():
     return "ADMIN OK", 200
 
+
+# ➕ BURAYA EKLİYORSUN
+@app.route("/admin")
+def admin_index():
+    return redirect(url_for("admin_home"))
+# ➕ BURAYA EKLİYORSUN
 
 # ----------------------------------------------------------------------
 # ANA SAYFA
