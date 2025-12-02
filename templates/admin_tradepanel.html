@@ -1,0 +1,584 @@
+{% extends "admin_base.html" %}
+
+{% block page_title %}Trade Panel{% endblock %}
+{% block header_title_inner %}Trade Panel{% endblock %}
+{% block header_subtitle %}
+IBKR ana hesap için manuel emir ekranı ve açık pozisyon özeti.
+{% endblock %}
+
+{% block content %}
+<style>
+  .trade-grid-top {
+    display: grid;
+    grid-template-columns: minmax(0, 2.2fr) minmax(0, 2fr);
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .trade-grid-bottom {
+    display: grid;
+    grid-template-columns: minmax(0, 2.2fr) minmax(0, 2fr);
+    gap: 16px;
+  }
+
+  .trade-card {
+    background: var(--bg-card);
+    border-radius: 14px;
+    border: 1px solid var(--border-soft);
+    padding: 14px 16px 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  }
+
+  .trade-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .trade-card-title {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .trade-card-sub {
+    font-size: 11px;
+    color: var(--text-soft);
+  }
+
+  .trade-main-value {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 4px 0 8px;
+  }
+
+  .trade-main-value.error {
+    color: var(--danger);
+  }
+
+  .trade-account-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 6px;
+  }
+
+  .stat-box {
+    background: var(--bg-card-soft);
+    border-radius: 10px;
+    border: 1px solid var(--border-soft);
+    padding: 8px 10px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-soft);
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .trade-btn-refresh {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border-soft);
+    background: var(--bg-card-soft);
+    color: var(--text-soft);
+    cursor: pointer;
+  }
+
+  .trade-btn-refresh:hover {
+    border-color: #2c3a54;
+    color: var(--text-main);
+  }
+
+  .order-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .order-grid-full {
+    grid-column: 1 / -1;
+  }
+
+  .form-label {
+    font-size: 11px;
+    color: var(--text-soft);
+    margin-bottom: 3px;
+  }
+
+  .form-input,
+  .form-select {
+    width: 100%;
+    background: var(--bg-card-soft);
+    border-radius: 8px;
+    border: 1px solid var(--border-soft);
+    padding: 7px 9px;
+    font-size: 12px;
+    color: var(--text-main);
+  }
+
+  .form-input::placeholder {
+    color: #64748b;
+  }
+
+  .order-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .btn-buy {
+    border-radius: 999px;
+    padding: 8px 10px;
+    border: 1px solid rgba(34, 197, 94, 0.8);
+    background: linear-gradient(135deg, rgba(21, 128, 61, 0.5), rgba(34, 197, 94, 0.7));
+    color: #e5ffe9;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .btn-sell {
+    border-radius: 999px;
+    padding: 8px 10px;
+    border: 1px solid rgba(248, 113, 113, 0.9);
+    background: linear-gradient(135deg, rgba(127, 29, 29, 0.7), rgba(248, 113, 113, 0.8));
+    color: #ffe5e5;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .btn-buy:hover {
+    filter: brightness(1.05);
+  }
+
+  .btn-sell:hover {
+    filter: brightness(1.05);
+  }
+
+  .order-status {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--text-soft);
+    min-height: 16px;
+  }
+
+  .order-status.ok {
+    color: #4ade80;
+  }
+
+  .order-status.err {
+    color: #fca5a5;
+  }
+
+  .positions-empty {
+    font-size: 12px;
+    color: #fca5a5;
+    margin-top: 4px;
+  }
+
+  #trade-json {
+    width: 100%;
+    min-height: 180px;
+    max-height: 260px;
+    resize: vertical;
+    background: var(--bg-card-soft);
+    border-radius: 10px;
+    border: 1px solid var(--border-soft);
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #d1e3ff;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    white-space: pre;
+    overflow: auto;
+  }
+
+  @media (max-width: 1100px) {
+    .trade-grid-top,
+    .trade-grid-bottom {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>
+
+<div class="trade-grid-top">
+  <!-- HESAP ÖZETİ -->
+  <div class="trade-card">
+    <div class="trade-card-header">
+      <div>
+        <div class="trade-card-title">Hesap Özeti</div>
+        <div class="trade-card-sub">Boru API'den IBKR ana hesap bilgisi. Toplam Net Değer (Equity).</div>
+      </div>
+      <button id="btn-refresh-all" class="trade-btn-refresh">Yenile</button>
+    </div>
+
+    <div class="trade-main-value" id="account-equity">Hata</div>
+
+    <div class="trade-account-row">
+      <div class="stat-box">
+        <div class="stat-label">Nakit</div>
+        <div class="stat-value" id="account-cash">-</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Buying Power</div>
+        <div class="stat-value" id="account-buying-power">-</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Currency</div>
+        <div class="stat-value" id="account-currency">-</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANUEL EMİR PANELİ -->
+  <div class="trade-card">
+    <div class="trade-card-header">
+      <div>
+        <div class="trade-card-title">Manuel Emir Paneli</div>
+        <div class="trade-card-sub">IBKR üzerinden tek seferlik emir gönder.</div>
+      </div>
+      <span id="order-api-status" class="badge-soft badge-soft-primary">API Hazır</span>
+    </div>
+
+    <div class="order-grid">
+      <div>
+        <div class="form-label">Sembol</div>
+        <input id="order-symbol" class="form-input" placeholder="Örn: GLDM" value="GLDM">
+      </div>
+
+      <div>
+        <div class="form-label">Emir Tipi</div>
+        <select id="order-type" class="form-select">
+          <option value="MARKET" selected>Market</option>
+          <option value="LIMIT">Limit</option>
+        </select>
+      </div>
+
+      <div>
+        <div class="form-label">Miktar (adet)</div>
+        <input id="order-qty" class="form-input" type="number" step="1" min="0" placeholder="Örn: 10">
+      </div>
+
+      <div>
+        <div class="form-label">Tutar ($) (opsiyonel)</div>
+        <input id="order-usd" class="form-input" type="number" step="0.01" min="0" placeholder="Örn: 500">
+      </div>
+
+      <div>
+        <div class="form-label">Limit Fiyat (sadece LIMIT)</div>
+        <input id="order-limit" class="form-input" type="number" step="0.01" min="0" placeholder="Örn: 35.20">
+      </div>
+
+      <div>
+        <div class="form-label">Yön</div>
+        <select id="order-side" class="form-select">
+          <option value="BUY" selected>AL (Long)</option>
+          <option value="SELL">SAT (Kısmi Çıkış)</option>
+        </select>
+      </div>
+
+      <div class="order-grid-full">
+        <div class="form-label">Not / strateji (opsiyonel)</div>
+        <input id="order-note" class="form-input" placeholder="Örn: ESEN V3 GLDM kademe 2">
+      </div>
+    </div>
+
+    <div class="order-actions">
+      <button id="btn-order-buy" class="btn-buy">● AL Emir Gönder</button>
+      <button id="btn-order-sell" class="btn-sell">● SAT Emir Gönder</button>
+    </div>
+
+    <div id="order-status" class="order-status">
+      Emirler /admin/api/order üzerinden Boru API'ye iletilir. Short / kaldıraç yok, sadece mevcut stratejiye uygun spot / long işlemler.
+    </div>
+  </div>
+</div>
+
+<div class="trade-grid-bottom">
+  <!-- AÇIK POZİSYONLAR -->
+  <div class="trade-card">
+    <div class="trade-card-header">
+      <div>
+        <div class="trade-card-title">Açık Pozisyonlar</div>
+        <div class="trade-card-sub">/api/positions cevabından özet tablo.</div>
+      </div>
+      <button id="btn-refresh-positions" class="trade-btn-refresh">Yenile</button>
+    </div>
+
+    <div id="positions-wrapper">
+      <table id="positions-table">
+        <thead>
+        <tr>
+          <th>SEMBOL</th>
+          <th>ADET</th>
+          <th>ORT. FİYAT</th>
+          <th>GÜNCEL FİYAT</th>
+          <th>K/Z ($)</th>
+          <th>K/Z (%)</th>
+        </tr>
+        </thead>
+        <tbody id="positions-body">
+        <tr>
+          <td colspan="6" class="positions-empty">Açık pozisyon yok.</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- JSON DEBUG -->
+  <div class="trade-card">
+    <div class="trade-card-header">
+      <div>
+        <div class="trade-card-title">Ham JSON (Debug)</div>
+        <div class="trade-card-sub">Hesap + pozisyon JSON çıktıları. Gerçek API cevabını burada görebilirsin (mapping kontrolü için).</div>
+      </div>
+    </div>
+
+    <textarea id="trade-json" readonly>{}</textarea>
+  </div>
+</div>
+
+<script>
+  async function fetchJson(url) {
+    const resp = await fetch(url, {cache: "no-store"});
+    let data = null;
+    try {
+      data = await resp.json();
+    } catch (e) {
+      data = {ok: false, error: "JSON parse edilemedi", rawStatus: resp.status};
+    }
+    return data;
+  }
+
+  function formatNumber(value) {
+    if (value === null || value === undefined || value === "-" || Number.isNaN(value)) {
+      return "-";
+    }
+    const num = Number(value);
+    if (!Number.isFinite(num)) return "-";
+    return num.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  }
+
+  function fillAccountCard(accData) {
+    const equityEl = document.getElementById("account-equity");
+    const cashEl = document.getElementById("account-cash");
+    const bpEl = document.getElementById("account-buying-power");
+    const curEl = document.getElementById("account-currency");
+
+    let equity = null;
+    let cash = null;
+    let buying = null;
+    let currency = "-";
+
+    if (accData && accData.ok) {
+      let acc = accData.account || accData.account_summary || null;
+
+      // Birden fazla hesap varsa
+      if (!acc && Array.isArray(accData.accounts) && accData.accounts.length > 0) {
+        if (accData.accounts.length === 1) {
+          acc = accData.accounts[0];
+        } else {
+          const accounts = accData.accounts;
+          equity = accounts.reduce((s, a) => s + (Number(a.net_liquidation || a.equity || 0)), 0);
+          cash = accounts.reduce((s, a) => s + (Number(a.cash || a.cash_balance || 0)), 0);
+          buying = accounts.reduce((s, a) => s + (Number(a.buying_power || a.available_funds || 0)), 0);
+          currency = accounts[0].currency || accounts[0].base_currency || "USD";
+        }
+      }
+
+      if (acc) {
+        if (equity === null) equity = acc.net_liquidation ?? acc.equity ?? acc.total_value ?? null;
+        if (cash === null) cash = acc.cash ?? acc.cash_balance ?? null;
+        if (buying === null) buying = acc.buying_power ?? acc.available_funds ?? null;
+        if (!currency || currency === "-") {
+          currency = acc.currency ?? acc.base_currency ?? "USD";
+        }
+      }
+    }
+
+    equityEl.textContent = equity === null ? "Hata" : formatNumber(equity);
+    cashEl.textContent = formatNumber(cash);
+    bpEl.textContent = formatNumber(buying);
+    curEl.textContent = currency || "-";
+
+    if (equity === null) {
+      equityEl.classList.add("error");
+    } else {
+      equityEl.classList.remove("error");
+    }
+  }
+
+  function normalizePositions(posData) {
+    if (!posData || posData.ok === false) return [];
+
+    let raw = [];
+    if (Array.isArray(posData.positions)) {
+      raw = posData.positions;
+    } else if (posData.positions && Array.isArray(posData.positions.positions)) {
+      raw = posData.positions.positions;
+    } else if (Array.isArray(posData)) {
+      raw = posData;
+    }
+
+    return raw.map(p => {
+      const symbol = p.symbol || p.ticker || p.localSymbol || p.conid || "?";
+      const qty = p.position ?? p.qty ?? p.quantity ?? 0;
+      const avg = p.avg_price ?? p.average_price ?? p.avgCost ?? null;
+      const last = p.last_price ?? p.market_price ?? p.current_price ?? null;
+      const pnlUsd = p.unrealized_pnl ?? p.unrealizedPNL ?? p.pnl_usd ?? null;
+      const pnlPct = p.unrealized_pnl_pct ?? p.pnl_pct ?? null;
+      return {symbol, qty, avg, last, pnlUsd, pnlPct};
+    });
+  }
+
+  function fillPositionsTable(posData) {
+    const tbody = document.getElementById("positions-body");
+    tbody.innerHTML = "";
+
+    const list = normalizePositions(posData);
+
+    if (!list.length) {
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = 6;
+      td.className = "positions-empty";
+      td.textContent = "Pozisyonlar alınamadı veya açık pozisyon yok.";
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
+    }
+
+    for (const p of list) {
+      const tr = document.createElement("tr");
+
+      const tdSymbol = document.createElement("td");
+      tdSymbol.textContent = p.symbol;
+
+      const tdQty = document.createElement("td");
+      tdQty.textContent = p.qty ?? p.quantity ?? p.position ?? 0;
+
+      const tdAvg = document.createElement("td");
+      tdAvg.textContent = formatNumber(p.avg);
+
+      const tdLast = document.createElement("td");
+      tdLast.textContent = formatNumber(p.last);
+
+      const tdPnl = document.createElement("td");
+      tdPnl.textContent = formatNumber(p.pnlUsd);
+
+      const tdPnlPct = document.createElement("td");
+      tdPnlPct.textContent = p.pnlPct == null ? "-" : formatNumber(p.pnlPct) + "%";
+
+      tr.appendChild(tdSymbol);
+      tr.appendChild(tdQty);
+      tr.appendChild(tdAvg);
+      tr.appendChild(tdLast);
+      tr.appendChild(tdPnl);
+      tr.appendChild(tdPnlPct);
+
+      tbody.appendChild(tr);
+    }
+  }
+
+  async function refreshAll() {
+    const [accData, posData] = await Promise.all([
+      fetchJson("/admin/api/account"),
+      fetchJson("/admin/api/positions"),
+    ]);
+
+    // JSON debug
+    const debugBox = document.getElementById("trade-json");
+    debugBox.value = JSON.stringify({account: accData, positions: posData}, null, 2);
+
+    fillAccountCard(accData);
+    fillPositionsTable(posData);
+  }
+
+  async function sendOrder(side) {
+    const statusEl = document.getElementById("order-status");
+    statusEl.classList.remove("ok", "err");
+    statusEl.textContent = "Emir gönderiliyor...";
+
+    const symbol = document.getElementById("order-symbol").value.trim().toUpperCase();
+    const orderType = document.getElementById("order-type").value;
+    const qtyRaw = document.getElementById("order-qty").value;
+    const usdRaw = document.getElementById("order-usd").value;
+    const limitRaw = document.getElementById("order-limit").value;
+    const note = document.getElementById("order-note").value.trim();
+
+    const qty = qtyRaw ? Number(qtyRaw) : null;
+    const usd = usdRaw ? Number(usdRaw) : null;
+    const limitPrice = limitRaw ? Number(limitRaw) : null;
+
+    if (!symbol) {
+      statusEl.textContent = "Sembol gerekli.";
+      statusEl.classList.add("err");
+      return;
+    }
+    if (!qty && !usd) {
+      statusEl.textContent = "En azından adet veya $ tutar girmelisin.";
+      statusEl.classList.add("err");
+      return;
+    }
+
+    const payload = {
+      symbol: symbol,
+      side: side,                 // BUY / SELL
+      order_type: orderType,      // MARKET / LIMIT
+      quantity: qty,
+      usd_amount: usd,
+      limit_price: limitPrice,
+      note: note || null,
+    };
+
+    try {
+      const resp = await fetch("/admin/api/order", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload),
+      });
+
+      const data = await resp.json().catch(() => null);
+
+      if (resp.ok && data && data.ok !== false) {
+        statusEl.textContent = "Emir gönderildi. Yanıt: " + JSON.stringify(data).slice(0, 180) + "...";
+        statusEl.classList.add("ok");
+        // Emirden sonra pozisyonları yenileyelim
+        refreshAll().catch(() => {});
+      } else {
+        statusEl.textContent = "Emir hatası: " + JSON.stringify(data || {status: resp.status}).slice(0, 200);
+        statusEl.classList.add("err");
+      }
+    } catch (e) {
+      statusEl.textContent = "Ağ hatası: " + e;
+      statusEl.classList.add("err");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("btn-refresh-all").addEventListener("click", () => {
+      refreshAll().catch(() => {});
+    });
+    document.getElementById("btn-refresh-positions").addEventListener("click", () => {
+      refreshAll().catch(() => {});
+    });
+    document.getElementById("btn-order-buy").addEventListener("click", () => {
+      sendOrder("BUY").catch(() => {});
+    });
+    document.getElementById("btn-order-sell").addEventListener("click", () => {
+      sendOrder("SELL").catch(() => {});
+    });
+
+    // Sayfa açılır açılmaz veriyi çek
+    refreshAll().catch(() => {});
+  });
+</script>
+{% endblock %}

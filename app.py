@@ -9,8 +9,8 @@ EsenTrader Boru API (VPS tarafı)
 IBKR ile direkt bağlantı KURMAZ.
 admin_mode + ibkr_client kullanarak uygun backend'e HTTP proxy yapar.
 """
+from flask import Flask, render_template, jsonify, request
 
-from flask import Flask, jsonify
 from admin_mode import get_admin_mode
 from ibkr_client import IBKRClient
 
@@ -92,6 +92,37 @@ def api_ibkr_status():
             "error": result["error"],
         }), 502
 
+# ============================================================
+# IBKR ACCOUNT — Trade Panel için basit endpointler
+# ============================================================
+
+@app.route("/api/ibkr/account", methods=["GET"])
+def api_ibkr_account():
+    """
+    IBKR ana hesap özeti.
+    Şimdilik dummy; ileride gerçek IBKR client ile dolduracağız.
+    """
+    data = {
+        "ok": True,
+        "account": {
+            "account": "DEMO",
+            "cash": 0.0,
+            "equity": 0.0,
+            "currency": "USD",
+            "buying_power": 0.0,
+        },
+    }
+    return jsonify(data)
+
+
+@app.route("/api/ibkr/account_summary", methods=["GET"])
+def api_ibkr_account_summary():
+    """
+    Trade panel fallback olarak bunu da deniyor.
+    Şimdilik aynı veriyi döndürüyoruz.
+    """
+    return api_ibkr_account()
+
 
 @app.route("/api/ibkr/positions", methods=["GET"])
 def api_ibkr_positions():
@@ -115,6 +146,46 @@ def api_ibkr_positions():
             "url": result["url"],
             "error": result["error"],
         }), 502
+
+# ============================================================
+# IBKR ORDER - Trade Panel için DEMO endpoint
+# ============================================================
+
+@app.route("/api/ibkr/place_order", methods=["POST"])
+@app.route("/api/ibkr/order", methods=["POST"])
+def api_ibkr_place_order():
+    """
+    Trade Panel'den gelen manuel emirler için DEMO endpoint.
+    Şimdilik gerçek IBKR'a gitmiyor, sadece payload'ı geri döndürüyor.
+    """
+    payload = request.get_json() or {}
+
+    # Basit validasyon
+    symbol = payload.get("symbol")
+    side = payload.get("side")
+    qty = payload.get("qty")
+    usd_amount = payload.get("usd_amount")
+    order_type = payload.get("order_type", "MKT")
+
+    if not symbol or not side:
+        return jsonify({
+            "ok": False,
+            "error": "symbol ve side zorunlu alanlardır.",
+        }), 400
+
+    return jsonify({
+        "ok": True,
+        "demo": True,
+        "message": "DEMO: Emir kaydedildi (IBKR'a gönderilmedi).",
+        "order": {
+            "symbol": symbol,
+            "side": side,
+            "qty": qty,
+            "usd_amount": usd_amount,
+            "order_type": order_type,
+            "note": payload.get("note"),
+        },
+    }), 200
 
 
 if __name__ == "__main__":
