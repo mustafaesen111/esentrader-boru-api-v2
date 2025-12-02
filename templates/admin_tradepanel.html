@@ -209,12 +209,28 @@ IBKR ana hesap için manuel emir ekranı ve açık pozisyon özeti.
 </style>
 
 <div class="trade-grid-top">
-  <!-- HESAP ÖZETİ -->
+
+  <!-- === SYMBOL CHART (TradingView) === -->
+  <div class="trade-card esen-card mb-4">
+    <div class="trade-card-header">
+      <div>
+        <div class="trade-card-title">Grafik</div>
+        <div class="trade-card-sub">
+          Sembol alanına yazdığın hisse burada çizilir. Örn: GLDM, NVDA, MSFT...
+        </div>
+      </div>
+    </div>
+    <div class="trade-card-body" style="height: 420px;">
+      <div id="tv_chart_container" style="width: 100%; height: 100%;"></div>
+    </div>
+  </div>
+
+  <!-- === HESAP ÖZETİ === -->
   <div class="trade-card">
     <div class="trade-card-header">
       <div>
         <div class="trade-card-title">Hesap Özeti</div>
-        <div class="trade-card-sub">Boru API'den IBKR ana hesap bilgisi. Toplam Net Değer (Equity).</div>
+        <div class="trade-card-sub">Boru API’den IBKR ana hesap bilgisi. Toplam Net Değer (Equity).</div>
       </div>
       <button id="btn-refresh-all" class="trade-btn-refresh">Yenile</button>
     </div>
@@ -224,18 +240,21 @@ IBKR ana hesap için manuel emir ekranı ve açık pozisyon özeti.
     <div class="trade-account-row">
       <div class="stat-box">
         <div class="stat-label">Nakit</div>
-        <div class="stat-value" id="account-cash">-</div>
+        <div class="stat-value" id="account-cash"></div>
       </div>
+
       <div class="stat-box">
         <div class="stat-label">Buying Power</div>
-        <div class="stat-value" id="account-buying-power">-</div>
+        <div class="stat-value" id="account-buying-power"></div>
       </div>
+
       <div class="stat-box">
         <div class="stat-label">Currency</div>
-        <div class="stat-value" id="account-currency">-</div>
+        <div class="stat-value" id="account-currency"></div>
       </div>
     </div>
   </div>
+</div>
 
   <!-- MANUEL EMİR PANELİ -->
   <div class="trade-card">
@@ -581,4 +600,59 @@ IBKR ana hesap için manuel emir ekranı ve açık pozisyon özeti.
     refreshAll().catch(() => {});
   });
 </script>
+
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+<script>
+// TradingView sembol grafiği
+let tvWidget = null;
+
+function loadTVChart(symbol) {
+  try {
+    if (!window.TradingView) {
+      console.warn("TradingView yüklenmedi.");
+      return;
+    }
+
+    // Eski widget'ı temizle
+    if (tvWidget && tvWidget.remove) {
+      tvWidget.remove();
+    }
+
+    // Yeni grafiği oluştur
+    tvWidget = new TradingView.widget({
+      container_id: "tv_chart_container",
+      autosize: true,
+      symbol: symbol,
+      interval: "D",
+      timezone: "Etc/UTC",
+      theme: "dark",
+      style: "1",
+      toolbar_bg: "#000000",
+      hide_top_toolbar: false,
+      hide_legend: false,
+      withdateranges: true,
+      allow_symbol_change: true,
+      studies: ["MASimple@tv-basicstudies"],
+    });
+  } catch (e) {
+    console.error("TradingView hata:", e);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const symbolInput = document.getElementById("order-symbol");
+  if (!symbolInput) return;
+
+  // Sayfa açılır açılmaz ilk grafik
+loadTVChart(symbolInput.value.trim() || "GLDM");
+
+  // Sembol alanı değişince grafiği güncelle
+  symbolInput.addEventListener("input", () => {
+    const sym = symbolInput.value.trim() || "GLDM";
+    loadTVChart(sym);
+  });
+});
+</script>
+
+
 {% endblock %}
