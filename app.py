@@ -14,6 +14,54 @@ from flask import Flask, render_template, jsonify, request
 from admin_mode import get_admin_mode
 from ibkr_client import IBKRClient
 
+from datetime import datetime
+import os, json
+
+# ----------------------------------------
+# Portfolio → IBKR Hesap mapping
+# ----------------------------------------
+portfolio_to_account = {
+    "gold": "U14813758",      # Gold portföy hesabı
+    "growth": "U7960949",     # Growth portföy hesabı
+    "power_etf": "U23330667"  # Power ETF portföy hesabı
+}
+
+# ----------------------------------------
+# LIVE / DEMO modu
+#  False  -> Sadece log + admin panel (şu an güvenli)
+#  True   -> IBKR'a gerçek emir yollar
+# ----------------------------------------
+LIVE_MODE = False
+
+
+def send_order_to_ibkr(symbol, side, qty, usd_amount,
+                       portfolio, account_id, tp, sl, note, source):
+    """
+    IBKR tarafına gerçek emir gönderen yardımcı fonksiyon.
+    ibkr_client.place_order(order_payload) çağrısını yapar.
+    """
+    order_payload = {
+        "symbol": symbol,
+        "side": side,
+        "qty": qty,
+        "usd_amount": usd_amount,
+        "portfolio": portfolio,
+        "account_id": account_id,
+        "tp_percent": tp,
+        "sl_percent": sl,
+        "note": note,
+        "source": source,
+    }
+    try:
+        result = ibkr_client.place_order(order_payload)
+    except Exception as e:
+        print("send_order_to_ibkr error:", e)
+        return {"ok": False, "error": str(e), "url": None, "mode": "error"}
+
+    return result
+
+
+
 app = Flask(__name__)
 ibkr_client = IBKRClient()
 
@@ -146,21 +194,127 @@ def api_ibkr_positions():
             "url": result["url"],
             "error": result["error"],
         }), 502
-
-# ============================================================
-# IBKR ORDER - Trade Panel için DEMO endpoint
 # ============================================================
 
+# ------------------------------------------------------
+# GENEL ORDER ENDPOINT'i  (TradingView + ileride web)
+# ------------------------------------------------------
+
+# ------------------------------------------------------
+# GENEL ORDER ENDPOINT'i  (TradingView + ileride web)
+# ------------------------------------------------------
+@app.route("/api/order", methods=["POST"])
+def api_order():
+    """
+    Tek boru emir endpoint'i.
+    TradingView webhook'ları ve ileride web panel buraya POST edecek.
+    Şimdilik:
+      - HER ZAMAN manual_orders.log'a yazar
+      - Eğer LIVE_MODE=True ise IBKR'a gerçek emir yollar.
+    """
+    try:
+        payload = request.get_json(force=True, silent=True) or {}
+    except Exception as e:
+        print("api_order JSON error:", e)
+        return jsonify({"ok": False, "error": "INVALID_JSON"}), 400
+
+    # Basit validasyon
+    symbol = payload.get("symbol")
+    side = payload.get("side")
+    qty = payload.get("qty")
+    usd_amount = payload.get("usd_amount")
+
+    if not symbol or not side:
+        return jsonify({
+            "ok": False,
+            "demo": True,
+            "error": "symbol ve side zorunlu alanlardır.",
+        }), 400
+
+    # Portföy ve IBKR hesap ID'si
+    portfolio = payload.get("portfolio") or "growth"
+    account_id = portfolio_to_account.get(portfolio)
+
+    tp = payload.get("tp_percent")
+    sl = payload.get("sl_percent")
+    note = payload.get("note")
+    source = payload.get("source") or "tv_bot"
+
+    # --- LOG: manual_orders.log ---
+    try:
+        log_path = os.path.join(os.path.dirname(__file__), "manual_orders.log")
+
+        log_entry = {
+            "ts": datetime.utcnow().isoformat() + "Z",
+            "symbol": symbol,
+            "side": (side or "").upper(),
+            "qty": qty,
+            "usd_amount": usd_amount,
+            "tp_percent": tp,
+            "sl_percent": sl,
+            "note": note,
+            "source": source,
+            "portfolio": portfolio,
+            "account_id": account_id,
+        }
+
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(log_entry) + "\n")
+
+    except Exception as e:
+        print("api_order log error:", e)
+
+    # --- LIVE: IBKR'a emir gönder (opsiyonel) ---
+    ibkr_result = None
+    if LIVE_MODE and account_id:
+        ibkr_result = send_order_to_ibkr(
+            symbol=symbol,
+            side=(side or "").upper(),
+            qty=qty,
+            usd_amount=usd_amount,
+            portfolio=portfolio,
+            account_id=account_id,
+            tp=tp,
+            sl=sl,
+            note=note,
+            source=source,
+        )
+
+    return jsonify({
+        "ok": True,
+        "demo": not LIVE_MODE,
+        "live": LIVE_MODE,
+        "message": "Emir kaydedildi. IBKR'a gönderme durumu: LIVE_MODE=%s" % LIVE_MODE,
+        "order": {
+            "symbol": symbol,
+            "side": side,
+            "qty": qty,
+            "usd_amount": usd_amount,
+            "portfolio": portfolio,
+            "account_id": account_id,
+        },
+        "ibkr_result": ibkr_result,
+    }), 200
+
+
+
+# ============================================================
+#  IBKR ORDER - Trade Panel için DEMO endpoint
+# ============================================================
+
+# ============================================================
+#  IBKR ORDER - Trade Panel için endpoint
+# ============================================================
 @app.route("/api/ibkr/place_order", methods=["POST"])
 @app.route("/api/ibkr/order", methods=["POST"])
 def api_ibkr_place_order():
     """
-    Trade Panel'den gelen manuel emirler için DEMO endpoint.
-    Şimdilik gerçek IBKR'a gitmiyor, sadece payload'ı geri döndürüyor.
+    Trade Panel'den gelen manuel emirler için endpoint.
+    - HER ZAMAN manual_orders.log'a yazar
+    - Eğer LIVE_MODE=True ise IBKR'a gerçek emir yollar.
     """
     payload = request.get_json() or {}
 
-    # Basit validasyon
     symbol = payload.get("symbol")
     side = payload.get("side")
     qty = payload.get("qty")
@@ -170,23 +324,77 @@ def api_ibkr_place_order():
     if not symbol or not side:
         return jsonify({
             "ok": False,
+            "demo": True,
             "error": "symbol ve side zorunlu alanlardır.",
         }), 400
 
+    portfolio = payload.get("portfolio") or "growth"
+    account_id = portfolio_to_account.get(portfolio)
+    tp = payload.get("tp_percent")
+    sl = payload.get("sl_percent")
+    note = payload.get("note")
+    source = payload.get("source") or "manual_panel"
+
+    # --- LOG ---
+    try:
+        log_path = os.path.join(os.path.dirname(__file__), "manual_orders.log")
+
+        log_entry = {
+            "ts": datetime.utcnow().isoformat() + "Z",
+            "symbol": symbol,
+            "side": (side or "").upper(),
+            "qty": qty,
+            "usd_amount": usd_amount,
+            "tp_percent": tp,
+            "sl_percent": sl,
+            "note": note,
+            "source": source,
+            "portfolio": portfolio,
+            "account_id": account_id,
+        }
+
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(log_entry) + "\n")
+
+    except Exception as e:
+        print("api_ibkr_place_order log error:", e)
+
+    # --- LIVE: IBKR'a emir gönder (opsiyonel) ---
+    ibkr_result = None
+    if LIVE_MODE and account_id:
+        ibkr_result = send_order_to_ibkr(
+            symbol=symbol,
+            side=(side or "").upper(),
+            qty=qty,
+            usd_amount=usd_amount,
+            portfolio=portfolio,
+            account_id=account_id,
+            tp=tp,
+            sl=sl,
+            note=note,
+            source=source,
+        )
+
     return jsonify({
         "ok": True,
-        "demo": True,
-        "message": "DEMO: Emir kaydedildi (IBKR'a gönderilmedi).",
+        "demo": not LIVE_MODE,
+        "live": LIVE_MODE,
+        "message": "Emir kaydedildi. IBKR'a gönderme durumu: LIVE_MODE=%s" % LIVE_MODE,
         "order": {
             "symbol": symbol,
             "side": side,
             "qty": qty,
             "usd_amount": usd_amount,
             "order_type": order_type,
-            "note": payload.get("note"),
+            "portfolio": portfolio,
+            "account_id": account_id,
         },
+        "ibkr_result": ibkr_result,
     }), 200
 
+
+
+# ===================buraya kadar =========================================
 
 if __name__ == "__main__":
     # VPS ana API portu

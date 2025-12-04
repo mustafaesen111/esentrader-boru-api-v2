@@ -1,75 +1,29 @@
 {% extends "admin_base.html" %}
 
-{% block content %}
-
-<div class="page-header">
-  <div class="title-group">
-    <h1>IBKR Admin Panel</h1>
-    <p>IBKR bağlantı modu ve Boru API durumu</p>
-  </div>
-</div>
-
-<div class="card">
-  <div class="card-header">
-    <div>
-      <div class="card-title">Aktif Mod</div>
-      <div class="card-subtitle">LOCAL = PC, VPS = Sunucu IB Gateway</div>
-    </div>
-    <div class="badge badge-green">
-      <span class="badge-dot ok"></span>
-      <span>{{ ibkr_mode }}</span>
-    </div>
-  </div>
-
-  <p style="font-size:13px; color:var(--muted); margin-bottom:10px;">
-    Modu değiştirmek IBKR'a hangi taraftan bağlanılacağını belirler.
-    Aynı anda sadece <strong>tek uç</strong> IBKR'a bağlanmalıdır.
-  </p>
-
-  <div style="display:flex; gap:10px; margin-bottom:6px;">
-    <button class="btn" type="button" onclick="setMode('LOCAL')">
-      LOCAL
-    </button>
-    <button class="btn" type="button"
-            onclick="setMode('VPS')">
-      VPS
-    </button>
-  </div>
-</div>
-
-<div class="card">
-  <div class="card-header">
-    <div>
-      <div class="card-title">Boru API Durumu</div>
-      <div class="card-subtitle">5055 portu ve /api/status</div>
-    </div>
-    {% if api_port_open %}
-      <div class="badge badge-green">
-        <span class="badge-dot ok"></span>
-        <span>5055 PORT AÇIK</span>
-      </div>
-    {% else %}
-      <div class="badge badge-red">
-        <span class="badge-dot err"></span>
-        <span>PORT KAPALI</span>
-      </div>
-    {% endif %}
-  </div>
-
-  <div class="json-card">
-    <div class="json-header">
-      <div>
-        <div class="json-title">Boru API JSON</div>
-        <div class="json-sub">Kaynak: /api/status</div>
-      </div>
-    </div>
-    <pre>{{ api_status_json | tojson(indent=2) }}</pre>
-  </div>
-</div>
-
-<a href="/admin/home" class="link-muted">
-  <span class="arrow">←</span> <span>Admin Home'a Dön</span>
-</a>
-
+{% block page_title %}IBKR Panel{% endblock %}
+{% block header_title_inner %}IBKR Paneli{% endblock %}
+{% block header_subtitle %}
+IBKR hesabı, pozisyonlar ve bağlantı durumu için özet ekran.
 {% endblock %}
 
+{% block content %}
+
+<div class="card-section">
+  <div class="card-section-title">IBKR Durumu</div>
+  <div class="card-section-sub">
+    Buraya IBKR API'den çekilen hesap özeti, açık pozisyonlar ve bağlantı durumu gelecek.
+    Şu an sadece panel çatısı hazır, backend ile entegrasyonu sonraya bırakıyoruz.
+  </div>
+
+  <div style="font-size:12px; color:var(--text-soft); margin-top:8px;">
+    Yol haritası:
+    <ol style="margin-top:6px; padding-left:18px;">
+      <li>IBKR bağlantı sağlık kontrolü (ping / account)</li>
+      <li>Hesap özeti kartı (equity, buying power, margin)</li>
+      <li>Açık pozisyonlar tablosu</li>
+      <li>Son 20 emir ve hata logları</li>
+    </ol>
+  </div>
+</div>
+
+{% endblock %}

@@ -4,6 +4,7 @@ import json
 
 import requests
 from flask import Flask, render_template, jsonify, redirect, url_for, request
+from datetime import datetime
 
 # Flask uygulaması
 app = Flask(__name__)
@@ -224,18 +225,39 @@ def admin_api_positions():
 # ================================================================
 # BORU API – MANUEL EMİR PROXY
 # ================================================================
+# ============================================================
+# BORU API – MANUEL EMİR PROXY + LOG
+# ============================================================
 @app.route("/admin/api/order", methods=["POST"])
 def admin_api_order():
+    print("### admin_api_order CALISTI ###")
+
+    # 1) JSON'u al
     try:
         payload = request.get_json(force=True, silent=True) or {}
-        payload.setdefault("source", "admin_trade_panel")
-    except Exception:
-        payload = {"source": "admin_trade_panel"}
+    except Exception as e:
+        print("admin_api_order JSON error:", e)
+        payload = {}
 
-    # Sırayla bu path'leri dener:
-    # 1) /api/order
-    # 2) /api/ibkr/order
-    # 3) /api/ibkr/place_order
+    # Panelden geldiğini not düş
+    payload.setdefault("source", "admin_trade_panel")
+
+    # 2) Manuel emir defterine LOG yaz
+    try:
+        log_path = os.path.join(os.path.dirname(__file__), "manual_orders.log")
+        log_entry = {
+            "ts": datetime.utcnow().isoformat() + "Z",
+            **payload,
+        }
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
+    except Exception as e:
+        print("admin_api_order log error:", e)
+
+    # 3) Eski davranış: Boru API'ye proxy yap (hiç dokunmuyoruz)
+    #    1) /api/order
+    #    2) /api/ibkr/order
+    #    3) /api/ibkr/place_order
     return _proxy_json_multi(
         ["/api/order", "/api/ibkr/order", "/api/ibkr/place_order"],
         method="POST",
@@ -292,6 +314,45 @@ def admin_tradepanel():
 def admin_tradehistory():
     return render_template("admin_tradehistory.html")
 
+@app.route("/admin/api/history")
+def admin_api_history():
+    """
+    manual_orders.log dosyasından son emirleri okur
+    ve JSON olarak döner. (Sadece admin için)
+    """
+    log_path = os.path.join(os.path.dirname(__file__), "manual_orders.log")
+    history = []
+
+    try:
+        with open(log_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                    history.append(obj)
+                except Exception as e:
+                    print("admin_api_history parse error:", e, line[:200])
+    except FileNotFoundError:
+        history = []
+    except Exception as e:
+        print("admin_api_history read error:", e)
+
+    try:
+        history.sort(key=lambda x: x.get("ts", ""), reverse=True)
+    except Exception as e:
+        print("admin_api_history sort error:", e)
+
+    history = history[:200]
+
+    return jsonify({"ok": True, "history": history})
+
+
+
+
+
+
 @app.route("/admin/ranks")
 def admin_ranks():
     return render_template("admin_ranks.html")
@@ -311,6 +372,67 @@ def admin_subscribers():
 @app.route("/admin/settings")
 def admin_settings():
     return render_template("admin_settings.html")
+
+
+@app.route("/admin/api/order", methods=["POST"])
+def admin_manual_order():
+    print("### admin_manual_order CALISTI ###")
+
+    """
+    Admin trade panelinden gelen MANUEL emirleri karşılar.
+    Şimdilik:
+      - JSON'u doğrular
+      - /var/log/esentrader/manual_orders.log dosyasına yazar
+      - JSON'u geri döner
+    Sonra: IBKR/Binance emir gönderme + DB kaydı ekleyeceğiz.
+    """
+    try:
+        data = request.get_json(force=True) or {}
+    except Exception as e:
+        print("admin_manual_order JSON error:", e)
+        return jsonify({"ok": False, "error": "INVALID_JSON"}), 400
+
+    symbol = (data.get("symbol") or "").upper()
+    side = (data.get("side") or "BUY").upper()
+    qty = data.get("quantity")
+    usd_amount = data.get("usd_amount")
+    tp = data.get("tp_percent")
+    sl = data.get("sl_percent")
+    note = data.get("note")
+    source = data.get("source") or "manual_panel"
+
+    if not symbol:
+        return jsonify({"ok": False, "error": "NO_SYMBOL"}), 400
+
+    if qty is None and usd_amount is None:
+        return jsonify({"ok": False, "error": "NO_SIZE"}), 400
+# ----------------------------------------------------------------------
+    # Log dosyasını proje klasörüne yazalım (en garantisi)
+    log_path = os.path.join(os.path.dirname(__file__), "manual_orders.log")
+
+    payload = {
+        "ts": datetime.utcnow().isoformat() + "Z",
+        "symbol": symbol,
+        "side": side,
+        "quantity": qty,
+        "usd_amount": usd_amount,
+        "tp_percent": tp,
+        "sl_percent": sl,
+        "note": note,
+        "source": source,
+         # Şimdilik tüm manuel emirler growth portföyüne yazılsın.
+        "portfolio": data.get("portfolio") or "growth",
+    }
+
+    try:
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(payload) + "\n")
+    except Exception as e:
+        print("admin_manual_order log error:", e)
+
+# ----------------------------------------------------------------------
+    return jsonify({"ok": True, "order": payload})
+
 
 # ----------------------------------------------------------------------
 # ÇALIŞTIR

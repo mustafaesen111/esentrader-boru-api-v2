@@ -2,28 +2,26 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>EsenTrader Admin</title>
+  <title>EsenTrader Admin – {% block page_title %}Dashboard{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <!-- Google Font (isteğe bağlı) -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Tema ve layout -->
   <style>
     :root {
-      --bg: #020617;
-      --bg-soft: #020617;
-      --bg-card: #0b1120;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --accent: #22c55e;
-      --accent-soft: rgba(34, 197, 94, 0.12);
-      --danger: #f97373;
-      --danger-soft: rgba(248, 113, 113, 0.14);
-      --warning: #fbbf24;
-      --warning-soft: rgba(251, 191, 36, 0.14);
-      --border: #1f2937;
-      --hover: #0f172a;
-      --nav-active: #111827;
-      --nav-hover: #1f2937;
-      --badge-radius: 999px;
-      --card-radius: 14px;
+      --bg-main: #050a13;
+      --bg-sidebar: #050914;
+      --bg-card: #0d1726;
+      --bg-card-soft: #111c2b;
+      --border-soft: #1f2a3b;
+      --accent: #17c964;
+      --accent-soft: rgba(23, 201, 100, 0.18);
+      --text-main: #e5ecff;
+      --text-soft: #9caac7;
+      --danger: #ff4d4d;
+      --warning: #f5a524;
     }
 
     * {
@@ -32,69 +30,87 @@
       padding: 0;
     }
 
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-        "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #020617 55%, #000 100%);
-      color: var(--text);
-      min-height: 100vh;
+    html, body {
+      height: 100%;
     }
 
-    a { color: inherit; text-decoration: none; }
+    body {
+      font-family: 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at top, #132036 0%, #050a13 55%, #020409 100%);
+      color: var(--text-main);
+      overflow-x: hidden; /* 🔴 YATAY SCROLLBAR KAPALI */
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
 
     .layout {
       display: flex;
       min-height: 100vh;
     }
 
-    /* SIDEBAR */
-
+    /* SIDEBAR ------------------------------------------------------- */
     .sidebar {
-      width: 250px;
-      background: #020617;
-      border-right: 1px solid var(--border);
-      padding: 18px 16px;
+      width: 260px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid #161f30;
+      padding: 20px 18px;
       display: flex;
       flex-direction: column;
     }
 
-    .brand {
+    .sidebar-header {
       display: flex;
       align-items: center;
       gap: 10px;
       margin-bottom: 24px;
-      padding: 4px 6px;
     }
 
-    .brand-logo {
-      width: 32px;
-      height: 32px;
+    .sidebar-logo {
+      width: 34px;
+      height: 34px;
       border-radius: 999px;
-      background: linear-gradient(135deg, #22c55e, #4ade80);
+      background: radial-gradient(circle at 20% 20%, #33ff88, #0077ff);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 700;
-      color: #022c22;
-      font-size: 18px;
+      font-weight: 800;
+      font-size: 16px;
+      color: #020309;
     }
 
-    .brand-text {
-      font-weight: 600;
+    .sidebar-title {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-title span:first-child {
       font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
     }
 
-    .brand-sub {
+    .sidebar-title span:last-child {
       font-size: 11px;
-      color: var(--muted);
+      color: var(--text-soft);
     }
 
-    .nav-section-title {
+    .sidebar-section-title {
       font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: .06em;
-      color: var(--muted);
-      margin: 18px 4px 6px;
+      letter-spacing: 0.12em;
+      color: var(--text-soft);
+      margin: 18px 0 6px;
+    }
+
+    .sidebar-main {
+      flex: 1;
+    }
+
+    .sidebar-section {
+      /* ileride ek alt gruplar için kalsın */
     }
 
     .nav-list {
@@ -102,7 +118,7 @@
     }
 
     .nav-item {
-      margin-bottom: 2px;
+      margin-bottom: 4px;
     }
 
     .nav-link {
@@ -111,133 +127,82 @@
       justify-content: space-between;
       font-size: 13px;
       padding: 8px 10px;
-      border-radius: 10px;
-      color: #e5e7eb;
-      transition: background .15s ease, color .15s ease;
+      border-radius: 8px;
+      color: var(--text-soft);
+      transition: background 0.15s ease, color 0.15s ease, transform 0.05s ease;
+      cursor: pointer;
     }
 
-    .nav-link span {
+    .nav-link span.label {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
 
     .nav-link:hover {
-      background: var(--nav-hover);
+      background: #111b2a;
+      color: var(--text-main);
+      transform: translateX(1px);
     }
 
     .nav-link.active {
-      background: var(--nav-active);
-      color: #e5e7eb;
+      background: linear-gradient(135deg, #1b4fff, #12c2e9);
+      color: #ffffff;
+    }
+
+    .nav-pill {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .nav-pill-soon {
+      border-color: rgba(245, 165, 36, 0.6);
+      color: #f5d27c;
     }
 
     .sidebar-footer {
       margin-top: auto;
       font-size: 11px;
-      color: var(--muted);
-      padding-top: 10px;
-      border-top: 1px solid #020617;
+      color: var(--text-soft);
+      opacity: 0.7;
     }
 
-    /* MAIN */
-
+    /* MAIN AREA ----------------------------------------------------- */
     .main {
       flex: 1;
       display: flex;
       flex-direction: column;
+      padding: 18px 24px 24px;
     }
 
     .topbar {
-      height: 52px;
-      border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 24px;
-      font-size: 13px;
+      margin-bottom: 18px;
     }
 
     .topbar-title {
-      font-weight: 500;
-      color: var(--muted);
-    }
-
-    .topbar-status {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      background: var(--accent-soft);
-      color: #bbf7d0;
-      padding: 4px 10px;
-      border-radius: 999px;
-    }
-
-    .topbar-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: #22c55e;
-    }
-
-    .content {
-      padding: 22px 26px 30px;
-    }
-
-    .card {
-      background: var(--bg-card);
-      border-radius: var(--card-radius);
-      border: 1px solid var(--border);
-      padding: 0;
-      overflow: hidden;
-    }
-
-    .card-header {
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-    }
-
-    .card-title {
       font-size: 14px;
-      font-weight: 500;
+      color: var(--text-soft);
     }
 
-    .card-subtitle {
-      font-size: 12px;
-      color: var(--muted);
+    .topbar-title span {
+      font-weight: 600;
+      color: var(--text-main);
     }
 
-    .json-card {
-      padding: 12px 16px 16px;
-    }
-
-    .json-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 6px;
-    }
-
-    .json-title {
-      font-size: 13px;
-      font-weight: 500;
-    }
-
-    .json-sub {
+    .topbar-badge {
       font-size: 11px;
-      color: var(--muted);
-    }
-
-    pre {
-      font-size: 12px;
-      background: #020617;
-      padding: 12px 14px;
-      border-radius: 10px;
-      overflow-x: auto;
-      border: 1px solid #020617;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(23, 201, 100, 0.12);
+      border: 1px solid rgba(23, 201, 100, 0.6);
+      color: #5cf0a4;
     }
 
     .page-header {
@@ -251,94 +216,401 @@
 
     .page-header p {
       font-size: 13px;
-      color: var(--muted);
+      color: var(--text-soft);
+    }
+
+    /* CARDS --------------------------------------------------------- */
+    .cards-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border-radius: 14px;
+      border: 1px solid var(--border-soft);
+      padding: 14px 14px 12px;
+      box-shadow: 0 14px 35px rgba(0, 0, 0, 0.55);
+    }
+
+    .card-header {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-soft);
+      margin-bottom: 8px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .card-meta {
+      font-size: 11px;
+      color: var(--text-soft);
+      margin-bottom: 10px;
+    }
+
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: var(--bg-card-soft);
+      border: 1px solid var(--border-soft);
+      cursor: pointer;
+    }
+
+    .tag-pill span.dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(23, 201, 100, 0.8);
+    }
+
+    .tag-pill.offline span.dot {
+      background: #f87171;
+      box-shadow: 0 0 8px rgba(248, 113, 113, 0.8);
+    }
+
+    .btn-primary-soft {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 13px;
+      font-size: 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(59, 130, 246, 0.8);
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.16), rgba(59, 130, 246, 0.22));
+      color: #c3d9ff;
+      cursor: pointer;
+    }
+
+    .btn-primary-soft:hover {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.32), rgba(59, 130, 246, 0.4));
+    }
+
+    .btn-secondary-soft {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 6px 10px;
+      font-size: 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: var(--bg-card-soft);
+      color: var(--text-soft);
+      cursor: pointer;
+    }
+
+    .btn-secondary-soft:hover {
+      border-color: #2c3a54;
+      color: var(--text-main);
+    }
+
+    /* CONTENT WRAPPER ----------------------------------------------- */
+    .content {
+      background: radial-gradient(circle at top, rgba(17, 24, 39, 0.9), rgba(2, 6, 23, 0.95));
+      border-radius: 18px;
+      border: 1px solid #151f30;
+      padding: 18px 18px 20px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.65);
+      min-height: calc(100vh - 120px);
+    }
+
+    /* TABLES & PRE -------------------------------------------------- */
+    .card-section {
+      background: var(--bg-card);
+      border-radius: 14px;
+      border: 1px solid var(--border-soft);
+      padding: 12px 14px 10px;
+      margin-bottom: 14px;
+    }
+
+    .card-section-title {
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .card-section-sub {
+      font-size: 11px;
+      color: var(--text-soft);
+      margin-bottom: 10px;
+    }
+
+    pre {
+      background: var(--bg-card-soft);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #d1e3ff;
+      max-height: 260px;
+      overflow: auto;
+      border: 1px solid var(--border-soft);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    table thead {
+      background: #111b2a;
+    }
+
+    th,
+    td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #1b2637;
+      text-align: left;
+    }
+
+    th {
+      font-weight: 500;
+      color: var(--text-soft);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      margin-right: 6px;
+    }
+
+    .status-online {
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(23, 201, 100, 0.8);
+    }
+
+    .status-offline {
+      background: #f87171;
+      box-shadow: 0 0 8px rgba(248, 113, 113, 0.8);
+    }
+
+    .status-manual {
+      background: #f5a524;
+      box-shadow: 0 0 8px rgba(245, 165, 36, 0.8);
+    }
+
+    .badge-soft {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--text-soft);
+    }
+
+    .badge-soft-primary {
+      border-color: rgba(59, 130, 246, 0.6);
+      color: #93c5fd;
+    }
+
+    .badge-soft-warning {
+      border-color: rgba(245, 158, 11, 0.7);
+      color: #fed7aa;
+    }
+
+    @media (max-width: 1100px) {
+      .cards-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 860px) {
+      .layout {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        flex-direction: row;
+        overflow-x: auto;
+        border-right: none;
+        border-bottom: 1px solid #161f30;
+      }
+
+      .sidebar-header {
+        margin-bottom: 0;
+        margin-right: 16px;
+      }
+
+      .sidebar-main {
+        display: flex;
+        gap: 18px;
+      }
+
+      .sidebar-section {
+        min-width: 150px;
+      }
+
+      .main {
+        padding: 14px 14px 18px;
+      }
+
+      .content {
+        padding: 14px 12px 16px;
+      }
     }
   </style>
 </head>
 <body>
-
 <div class="layout">
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-logo">E</div>
-      <div>
-        <div class="brand-text">ESENTRADER</div>
-        <div class="brand-sub">Admin &amp; Control Panel</div>
+    <div class="sidebar-header">
+      <div class="sidebar-logo">E</div>
+      <div class="sidebar-title">
+        <span>ESENTRADER</span>
+        <span>Admin &amp; Control Panel</span>
       </div>
     </div>
 
-    <div>
-      <div class="nav-section-title">Navigation</div>
-      <ul class="nav-list">
-        <li class="nav-item">
-          <a href="/admin/home" class="nav-link">
-            <span>Dashboard</span>
-          </a>
-        </li>
-        <li class="nav-item">
-          <a href="/admin/analytics" class="nav-link">
-            <span>Analytics</span>
-          </a>
-        </li>
-        <li class="nav-item">
-          <a href="/admin/ibkr" class="nav-link">
-            <span>IBKR Panel</span>
-          </a>
-        </li>
-      </ul>
+    <div class="sidebar-main">
+      <div class="sidebar-section">
+        <!-- NAVIGATION -->
+        <div class="sidebar-section-title">Navigation</div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a class="nav-link{% if request.path == '/admin/home' %} active{% endif %}" href="/admin/home">
+              <span class="label">Dashboard</span>
+              <span class="nav-pill">Main</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link{% if request.path == '/admin/analytics' %} active{% endif %}" href="/admin/analytics">
+              <span class="label">Analytics</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link{% if request.path == '/admin/ibkr' %} active{% endif %}" href="/admin/ibkr">
+              <span class="label">IBKR Panel</span>
+            </a>
+          </li>
+        </ul>
 
-      <div class="nav-section-title">Trading</div>
-      <ul class="nav-list">
-        <li class="nav-item">
-          <a href="#" class="nav-link">
-            <span>Binance Panel</span>
-          </a>
-        </li>
-        <li class="nav-item">
-          <a href="#" class="nav-link">
-            <span>Copy-Trade</span>
-          </a>
-        </li>
-      </ul>
+        <!-- TRADING -->
+        <div class="sidebar-section-title">Trading</div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a class="nav-link{% if request.path == '/admin/binance' %} active{% endif %}" href="/admin/binance">
+              <span class="label">Binance Panel</span>
+              <span class="nav-pill nav-pill-soon">Yakında</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link{% if request.path == '/admin/copytrade' %} active{% endif %}" href="/admin/copytrade">
+              <span class="label">Copy-Trade</span>
+              <span class="nav-pill nav-pill-soon">Yakında</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link{% if request.path == '/admin/tradepanel' %} active{% endif %}" href="/admin/tradepanel">
+              <span class="label">Trade Panel</span>
+              <span class="nav-pill nav-pill-soon">Yakında</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link{% if request.path == '/admin/tradehistory' %} active{% endif %}" href="/admin/tradehistory">
+              <span class="label">Trade History</span>
+              <span class="nav-pill nav-pill-soon">Yakında</span>
+            </a>
+          </li>
+        </ul>
 
-      <div class="nav-section-title">Subscribers</div>
-      <ul class="nav-list">
-        <li class="nav-item">
-          <a href="#" class="nav-link">
-            <span>Subscribers</span>
-          </a>
-        </li>
-        <li class="nav-item">
-          <a href="#" class="nav-link">
-            <span>Settings &amp; Logs</span>
-          </a>
-        </li>
-      </ul>
+        <!-- ESEN SYSTEM -->
+        <div class="sidebar-section-title">ESEN System</div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a class="nav-link{% if request.path == '/admin/ranks' %} active{% endif %}" href="/admin/ranks">
+              <span class="label">ESEN Stock Ranks</span>
+              <span class="nav-pill nav-pill-soon">Yakında</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link{% if request.path == '/admin/signals' %} active{% endif %}" href="/admin/signals">
+              <span class="label">Signals Monitor</span>
+              <span class="nav-pill nav-pill-soon">Yakında</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link{% if request.path == '/admin/risk' %} active{% endif %}" href="/admin/risk">
+              <span class="label">Risk Dashboard</span>
+              <span class="nav-pill nav-pill-soon">Yakında</span>
+            </a>
+          </li>
+        </ul>
+
+        <!-- SUBSCRIBERS -->
+        <div class="sidebar-section-title">Subscribers</div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a class="nav-link{% if request.path == '/admin/subscribers' %} active{% endif %}" href="/admin/subscribers">
+              <span class="label">Subscribers</span>
+              <span class="nav-pill nav-pill-soon">Yakında</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link{% if request.path == '/admin/settings' %} active{% endif %}" href="/admin/settings">
+              <span class="label">Settings &amp; Logs</span>
+              <span class="nav-pill nav-pill-soon">Yakında</span>
+            </a>
+          </li>
+        </ul>
+      </div>
     </div>
 
     <div class="sidebar-footer">
-      ESEN V3 · v1
+      ESEN V3 · v1<br/>
+      <span style="opacity:.7;">© 2025</span>
     </div>
   </aside>
 
   <!-- MAIN -->
   <main class="main">
     <div class="topbar">
-      <div class="topbar-title">ESENTRADER • ADMIN</div>
-      <div class="topbar-status">
-        <span class="topbar-dot"></span>
-        <span>Boru API ve IBKR kontrol paneli</span>
+      <div class="topbar-title">
+        Boru ve IBKR altyapısı için <span>canlı kontrol paneli</span>
+      </div>
+      <div class="topbar-badge">
+        ● Boru API ve IBKR kontrol paneli
       </div>
     </div>
 
-    <div class="content">
-      {% block content %}{% endblock %}
+    <div class="page-header">
+      <h1>{% block header_title %}{% block header_title_inner %}{% endblock %}{% endblock %}</h1>
+      <p>{% block header_subtitle %}{% endblock %}</p>
     </div>
+
+    <section class="content">
+      {% block content %}
+      {% endblock %}
+    </section>
   </main>
-
 </div>
-
 </body>
 </html>

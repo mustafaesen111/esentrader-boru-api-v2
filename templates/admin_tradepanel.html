@@ -257,70 +257,181 @@ IBKR ana hesap için manuel emir ekranı ve açık pozisyon özeti.
 </div>
 
   <!-- MANUEL EMİR PANELİ -->
-  <div class="trade-card">
-    <div class="trade-card-header">
-      <div>
-        <div class="trade-card-title">Manuel Emir Paneli</div>
-        <div class="trade-card-sub">IBKR üzerinden tek seferlik emir gönder.</div>
-      </div>
-      <span id="order-api-status" class="badge-soft badge-soft-primary">API Hazır</span>
+
+
+
+<!-- Manuel Emir Paneli -->
+<div class="col-lg-4 col-md-5">
+  <div class="card mb-4">
+    <div class="card-header pb-0">
+      <h6 class="mb-0">Manuel Emir Paneli</h6>
+      <p class="text-xs text-secondary mb-0">
+        Sembol yaz → yön / miktar / TP / SL gir → Emri Gönder
+      </p>
     </div>
+    <div class="card-body pt-3">
+      <form id="manual-order-form" onsubmit="return sendManualOrder(event);">
+        
+        <!-- Sembol -->
+        <div class="mb-3">
+          <label for="order-symbol" class="form-label text-sm">Sembol</label>
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            id="order-symbol"
+            name="symbol"
+            placeholder="Örn: GLDM, NVDA"
+            autocomplete="off"
+          >
+          <small class="text-xs text-secondary">
+            Bu alan, TradingView grafiğiyle bağlantılıdır.  
+            Buraya ne yazarsan grafik de o sembole geçer.
+          </small>
+        </div>
 
-    <div class="order-grid">
-      <div>
-        <div class="form-label">Sembol</div>
-        <input id="order-symbol" class="form-input" placeholder="Örn: GLDM" value="GLDM">
-      </div>
+        <!-- Yön (Al / Sat) -->
+        <div class="mb-3">
+          <label class="form-label text-sm d-block mb-1">Yön</label>
+          <div class="d-flex gap-2">
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="side"
+                id="order-side-buy"
+                value="BUY"
+                checked
+              >
+              <label class="form-check-label text-sm" for="order-side-buy">
+                AL (Long)
+              </label>
+            </div>
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="side"
+                id="order-side-sell"
+                value="SELL"
+              >
+              <label class="form-check-label text-sm" for="order-side-sell">
+                SAT (Pozisyon Kapat / Short değil)
+              </label>
+            </div>
+          </div>
+        </div>
 
-      <div>
-        <div class="form-label">Emir Tipi</div>
-        <select id="order-type" class="form-select">
-          <option value="MARKET" selected>Market</option>
-          <option value="LIMIT">Limit</option>
-        </select>
-      </div>
+        <!-- Miktar & USD Tutar -->
+        <div class="mb-3">
+          <label class="form-label text-sm d-block mb-1">Miktar</label>
+          <div class="row g-2">
+            <div class="col-6">
+              <input
+                type="number"
+                step="0.0001"
+                min="0"
+                class="form-control form-control-sm"
+                id="order-qty"
+                name="quantity"
+                placeholder="Adet"
+              >
+              <small class="text-xs text-secondary">Adet (lot)</small>
+            </div>
+            <div class="col-6">
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                class="form-control form-control-sm"
+                id="order-usd"
+                name="usd_amount"
+                placeholder="USD"
+              >
+              <small class="text-xs text-secondary">USD Tutar (opsiyonel)</small>
+            </div>
+          </div>
+          <small class="text-xs text-secondary d-block mt-1">
+            Emir gönderirken backend, <strong>öncelik sırası</strong>:
+            <strong>USD tutar → Adet</strong> olarak hesaplama yapabilir.
+          </small>
+        </div>
 
-      <div>
-        <div class="form-label">Miktar (adet)</div>
-        <input id="order-qty" class="form-input" type="number" step="1" min="0" placeholder="Örn: 10">
-      </div>
+        <!-- TP / SL (%) -->
+        <div class="mb-3">
+          <label class="form-label text-sm d-block mb-1">
+            TP / Zarar Kes (SL)
+          </label>
+          <div class="row g-2">
+            <div class="col-6">
+              <div class="input-group input-group-sm">
+                <input
+                  type="number"
+                  step="0.1"
+                  class="form-control"
+                  id="order-tp-percent"
+                  name="tp_percent"
+                  placeholder="2.4"
+                >
+                <span class="input-group-text">%</span>
+              </div>
+              <small class="text-xs text-secondary">TP (%) – Kâr Al</small>
+            </div>
+            <div class="col-6">
+              <div class="input-group input-group-sm">
+                <input
+                  type="number"
+                  step="0.1"
+                  class="form-control"
+                  id="order-sl-percent"
+                  name="sl_percent"
+                  placeholder="2.0"
+                >
+                <span class="input-group-text">%</span>
+              </div>
+              <small class="text-xs text-secondary">SL (%) – Zarar Kes</small>
+            </div>
+          </div>
+          <small class="text-xs text-secondary d-block mt-1">
+            Örnek: TP 2.4 → giriş fiyatından <strong>%2.4</strong> kârda
+            otomatik çıkış. SL 2.0 → giriş fiyatından <strong>%2</strong> zararda
+            kes.
+          </small>
+        </div>
 
-      <div>
-        <div class="form-label">Tutar ($) (opsiyonel)</div>
-        <input id="order-usd" class="form-input" type="number" step="0.01" min="0" placeholder="Örn: 500">
-      </div>
+        <!-- Not / Etiket (opsiyonel) -->
+        <div class="mb-3">
+          <label for="order-note" class="form-label text-sm">Not / Etiket (opsiyonel)</label>
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            id="order-note"
+            name="note"
+            placeholder="Örn: GLDM Kademe 3, Esen V3 sinyali"
+          >
+        </div>
 
-      <div>
-        <div class="form-label">Limit Fiyat (sadece LIMIT)</div>
-        <input id="order-limit" class="form-input" type="number" step="0.01" min="0" placeholder="Örn: 35.20">
-      </div>
+        <!-- Gönder Butonu -->
+        <div class="d-grid">
+          <button
+            type="submit"
+            class="btn btn-success btn-sm"
+            id="order-submit-btn"
+          >
+            Emri Gönder
+          </button>
+        </div>
 
-      <div>
-        <div class="form-label">Yön</div>
-        <select id="order-side" class="form-select">
-          <option value="BUY" selected>AL (Long)</option>
-          <option value="SELL">SAT (Kısmi Çıkış)</option>
-        </select>
-      </div>
-
-      <div class="order-grid-full">
-        <div class="form-label">Not / strateji (opsiyonel)</div>
-        <input id="order-note" class="form-input" placeholder="Örn: ESEN V3 GLDM kademe 2">
-      </div>
-    </div>
-
-    <div class="order-actions">
-      <button id="btn-order-buy" class="btn-buy">● AL Emir Gönder</button>
-      <button id="btn-order-sell" class="btn-sell">● SAT Emir Gönder</button>
-    </div>
-
-    <div id="order-status" class="order-status">
-      Emirler /admin/api/order üzerinden Boru API'ye iletilir. Short / kaldıraç yok, sadece mevcut stratejiye uygun spot / long işlemler.
+        <!-- Hata / Bilgi Mesajı -->
+        <div class="mt-2">
+          <small id="order-message" class="text-xs text-secondary"></small>
+        </div>
+      </form>
     </div>
   </div>
 </div>
+<!-- /Manuel Emir Paneli -->
 
-<div class="trade-grid-bottom">
+
   <!-- AÇIK POZİSYONLAR -->
   <div class="trade-card">
     <div class="trade-card-header">
@@ -601,9 +712,10 @@ IBKR ana hesap için manuel emir ekranı ve açık pozisyon özeti.
   });
 </script>
 
+
+<!-- TradingView: Sembol Grafiği -->
 <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 <script>
-// TradingView sembol grafiği
 let tvWidget = null;
 
 function loadTVChart(symbol) {
@@ -641,10 +753,15 @@ function loadTVChart(symbol) {
 
 document.addEventListener("DOMContentLoaded", () => {
   const symbolInput = document.getElementById("order-symbol");
-  if (!symbolInput) return;
+
+  // Sembol input'u yoksa bile en azından GLDM grafiğini yükle
+  if (!symbolInput) {
+    loadTVChart("GLDM");
+    return;
+  }
 
   // Sayfa açılır açılmaz ilk grafik
-loadTVChart(symbolInput.value.trim() || "GLDM");
+  loadTVChart(symbolInput.value.trim() || "GLDM");
 
   // Sembol alanı değişince grafiği güncelle
   symbolInput.addEventListener("input", () => {
@@ -652,7 +769,178 @@ loadTVChart(symbolInput.value.trim() || "GLDM");
     loadTVChart(sym);
   });
 });
+
+
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+<script>
+// TradingView sembol grafiği
+let tvWidget = null;
+
+function loadTVChart(symbol) {
+  try {
+    if (!window.TradingView) {
+      console.warn("TradingView yüklenmedi.");
+      return;
+    }
+
+    if (tvWidget && tvWidget.remove) {
+      tvWidget.remove();
+    }
+
+    tvWidget = new TradingView.widget({
+      container_id: "tv_chart_container",
+      autosize: true,
+      symbol: symbol,
+      interval: "D",
+      timezone: "Etc/UTC",
+      theme: "dark",
+      style: "1",
+      toolbar_bg: "#000000",
+      hide_top_toolbar: false,
+      hide_legend: false,
+      withdateranges: true,
+      allow_symbol_change: true,
+      studies: ["MASimple@tv-basicstudies"],
+    });
+  } catch (e) {
+    console.error("TradingView hata:", e);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const symbolInput = document.getElementById("order-symbol");
+
+  if (!symbolInput) {
+    loadTVChart("GLDM");
+    return;
+  }
+
+  loadTVChart(symbolInput.value.trim() || "GLDM");
+
+  symbolInput.addEventListener("input", () => {
+    const sym = symbolInput.value.trim() || "GLDM";
+    loadTVChart(sym);
+  });
+});
 </script>
 
+<script>
+function sendManualOrder(event) {
+  // Normal submit’i durdur
+  if (event) {
+    event.preventDefault();
+  }
+
+  const ORDER_API_URL = "/admin/api/order";
+
+  const symbolInput = document.getElementById("order-symbol");
+  const qtyInput    = document.getElementById("order-qty");
+  const usdInput    = document.getElementById("order-usd");
+  const tpInput     = document.getElementById("order-tp-percent");
+  const slInput     = document.getElementById("order-sl-percent");
+  const noteInput   = document.getElementById("order-note");
+  const messageBox  = document.getElementById("order-message");
+  const submitBtn   = document.getElementById("order-submit-btn");
+
+  function setMessage(text, isError = false) {
+    if (!messageBox) return;
+    messageBox.textContent = text || "";
+    messageBox.style.color = isError ? "#ff4d4d" : "#9caac7";
+  }
+
+  if (!symbolInput) {
+    setMessage("Form bulunamadı.", true);
+    return false;
+  }
+
+  const symbolRaw = (symbolInput.value || "").trim();
+  const symbol = symbolRaw.toUpperCase();
+  const side = document.getElementById("order-side-sell").checked ? "SELL" : "BUY";
+
+  const qtyVal  = qtyInput.value !== "" ? parseFloat(qtyInput.value) : null;
+  const usdVal  = usdInput.value !== "" ? parseFloat(usdInput.value) : null;
+  const tpVal   = tpInput.value  !== "" ? parseFloat(tpInput.value)  : null;
+  const slVal   = slInput.value  !== "" ? parseFloat(slInput.value)  : null;
+  const noteVal = (noteInput.value || "").trim() || null;
+
+  if (!symbol) {
+    setMessage("Lütfen sembol gir.", true);
+    return false;
+  }
+
+  if ((qtyVal === null || isNaN(qtyVal)) && (usdVal === null || isNaN(usdVal))) {
+    setMessage("En az Adet veya USD tutarından birini girmen gerekiyor.", true);
+    return false;
+  }
+
+  if (qtyVal !== null && qtyVal <= 0) {
+    setMessage("Adet 0'dan büyük olmalı.", true);
+    return false;
+  }
+
+  if (usdVal !== null && usdVal <= 0) {
+    setMessage("USD tutar 0'dan büyük olmalı.", true);
+    return false;
+  }
+
+  const payload = {
+    symbol: symbol,
+    side: side,
+    quantity: qtyVal,
+    usd_amount: usdVal,
+    tp_percent: tpVal,
+    sl_percent: slVal,
+    note: noteVal,
+    source: "manual_panel"
+  };
+
+  (async () => {
+    try {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Gönderiliyor...";
+      setMessage("Emir gönderiliyor...", false);
+
+      const response = await fetch(ORDER_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const txt = await response.text();
+        console.error("Order error:", txt);
+        setMessage("Emir gönderilemedi. Sunucu hata döndürdü.", true);
+      } else {
+        let data = null;
+        try {
+          data = await response.json();
+          console.log("Order response:", data);
+        } catch (err) {
+          // JSON olmayabilir, sorun değil
+        }
+
+        setMessage("Emir başarıyla gönderildi.", false);
+
+        // Sembole dokunma, diğerlerini temizle
+        qtyInput.value  = "";
+        usdInput.value  = "";
+        tpInput.value   = "";
+        slInput.value   = "";
+        noteInput.value = "";
+      }
+    } catch (err) {
+      console.error("Network/JS error:", err);
+      setMessage("Ağ/JS hatası: Emir gönderilemedi.", true);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Emri Gönder";
+    }
+  })();
+
+  // Formun sayfayı yenilemesini tamamen engelle
+  return false;
+}
+</script>
 
 {% endblock %}
+
